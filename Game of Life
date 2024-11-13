@@ -1,0 +1,74 @@
+// File: game_of_life.go
+
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+const size = 10
+
+var grid [size][size]bool
+
+func nextGeneration() {
+	var next [size][size]bool
+	for i := 0; i < size; i++ {
+		for j := 0; j < size; j++ {
+			neighbors := countNeighbors(i, j)
+			if grid[i][j] && (neighbors == 2 || neighbors == 3) {
+				next[i][j] = true
+			} else if !grid[i][j] && neighbors == 3 {
+				next[i][j] = true
+			} else {
+				next[i][j] = false
+			}
+		}
+	}
+	grid = next
+}
+
+func countNeighbors(x, y int) int {
+	count := 0
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			if i == 0 && j == 0 {
+				continue
+			}
+			nx, ny := x+i, y+j
+			if nx >= 0 && ny >= 0 && nx < size && ny < size && grid[nx][ny] {
+				count++
+			}
+		}
+	}
+	return count
+}
+
+func displayGrid() {
+	for i := 0; i < size; i++ {
+		for j := 0; j < size; j++ {
+			if grid[i][j] {
+				fmt.Print("O ")
+			} else {
+				fmt.Print(". ")
+			}
+		}
+		fmt.Println()
+	}
+}
+
+func main() {
+	// Initial setup
+	grid[1][2] = true
+	grid[2][3] = true
+	grid[3][1] = true
+	grid[3][2] = true
+	grid[3][3] = true
+
+	for {
+		displayGrid()
+		nextGeneration()
+		time.Sleep(500 * time.Millisecond)
+		fmt.Println()
+	}
+}
