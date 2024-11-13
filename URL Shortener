@@ -1,0 +1,52 @@
+// File: main.go
+
+package main
+
+import (
+	"fmt"
+	"math/rand"
+	"net/http"
+	"time"
+)
+
+var store = make(map[string]string)
+
+func shortenerHandler(w http.ResponseWriter, r *http.Request) {
+	longURL := r.URL.Query().Get("url")
+	if longURL == "" {
+		http.Error(w, "URL is required", http.StatusBadRequest)
+		return
+	}
+
+	shortCode := generateShortCode()
+	store[shortCode] = longURL
+
+	fmt.Fprintf(w, "Short URL: http://localhost:8080/%s", shortCode)
+}
+
+func redirectHandler(w http.ResponseWriter, r *http.Request) {
+	shortCode := r.URL.Path[1:]
+	longURL, exists := store[shortCode]
+	if !exists {
+		http.Error(w, "Short URL not found", http.StatusNotFound)
+		return
+	}
+	http.Redirect(w, r, longURL, http.StatusFound)
+}
+
+func generateShortCode() string {
+	rand.Seed(time.Now().UnixNano())
+	chars := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	code := make([]byte, 6)
+	for i := range code {
+		code[i] = chars[rand.Intn(len(chars))]
+	}
+	return string(code)
+}
+
+func main() {
+	http.HandleFunc("/", redirectHandler)
+	http.HandleFunc("/shorten", shortenerHandler)
+	fmt.Println("Server running at :8080")
+	http.ListenAndServe(":8080", nil)
+}
