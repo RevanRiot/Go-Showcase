@@ -1,0 +1,44 @@
+// File: jwt_auth.go
+
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+	"time"
+
+	"github.com/golang-jwt/jwt/v4"
+)
+
+var jwtKey = []byte("my_secret_key")
+
+func generateJWT(username string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"username": username,
+		"exp":      time.Now().Add(time.Hour * 2).Unix(),
+	})
+	return token.SignedString(jwtKey)
+}
+
+func authHandler(w http.ResponseWriter, r *http.Request) {
+	username := r.URL.Query().Get("username")
+	if username == "" {
+		http.Error(w, "Username is required", http.StatusBadRequest)
+		return
+	}
+
+	token, err := generateJWT(username)
+	if err != nil {
+		http.Error(w, "Error generating token", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write([]byte(fmt.Sprintf("Token: %s", token)))
+}
+
+func main() {
+	http.HandleFunc("/auth", authHandler)
+	log.Println("JWT Auth Service running on :8080...")
+	http.ListenAndServe(":8080", nil)
+}
