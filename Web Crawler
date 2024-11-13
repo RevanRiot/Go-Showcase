@@ -1,0 +1,45 @@
+// File: crawler.go
+
+package main
+
+import (
+	"fmt"
+	"net/http"
+	"golang.org/x/net/html"
+)
+
+func crawl(url string) {
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	doc, err := html.Parse(resp.Body)
+	if err != nil {
+		fmt.Println("Error parsing HTML:", err)
+		return
+	}
+
+	visit(doc)
+}
+
+func visit(n *html.Node) {
+	if n.Type == html.ElementNode && n.Data == "a" {
+		for _, attr := range n.Attr {
+			if attr.Key == "href" {
+				fmt.Println("Link found:", attr.Val)
+			}
+		}
+	}
+	for child := n.FirstChild; child != nil; child = child.NextSibling {
+		visit(child)
+	}
+}
+
+func main() {
+	url := "https://example.com"
+	fmt.Println("Crawling:", url)
+	crawl(url)
+}
