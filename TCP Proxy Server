@@ -1,0 +1,42 @@
+// File: tcp_proxy.go
+
+package main
+
+import (
+	"io"
+	"log"
+	"net"
+)
+
+func main() {
+	listener, err := net.Listen("tcp", ":8080")
+	if err != nil {
+		log.Fatalf("Failed to start proxy: %v", err)
+	}
+	defer listener.Close()
+
+	log.Println("Proxy listening on port 8080...")
+	for {
+		clientConn, err := listener.Accept()
+		if err != nil {
+			log.Printf("Failed to accept connection: %v", err)
+			continue
+		}
+
+		go handleConnection(clientConn)
+	}
+}
+
+func handleConnection(clientConn net.Conn) {
+	defer clientConn.Close()
+
+	serverConn, err := net.Dial("tcp", "example.com:80")
+	if err != nil {
+		log.Printf("Failed to connect to server: %v", err)
+		return
+	}
+	defer serverConn.Close()
+
+	go io.Copy(serverConn, clientConn)
+	io.Copy(clientConn, serverConn)
+}
