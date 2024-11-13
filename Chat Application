@@ -1,0 +1,59 @@
+// File: main.go
+
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"net"
+	"os"
+	"strings"
+)
+
+func main() {
+	go startServer()
+
+	fmt.Println("Enter 'connect' to join chat or 'exit' to quit:")
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		input := scanner.Text()
+		if input == "connect" {
+			startClient()
+		} else if input == "exit" {
+			break
+		}
+	}
+}
+
+func startServer() {
+	listener, _ := net.Listen("tcp", ":8081")
+	defer listener.Close()
+
+	for {
+		conn, _ := listener.Accept()
+		go handleConnection(conn)
+	}
+}
+
+func handleConnection(conn net.Conn) {
+	defer conn.Close()
+	buffer := make([]byte, 1024)
+	for {
+		n, err := conn.Read(buffer)
+		if err != nil {
+			break
+		}
+		fmt.Println("Client:", string(buffer[:n]))
+	}
+}
+
+func startClient() {
+	conn, _ := net.Dial("tcp", "localhost:8081")
+	defer conn.Close()
+
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		msg := scanner.Text()
+		conn.Write([]byte(msg))
+	}
+}
