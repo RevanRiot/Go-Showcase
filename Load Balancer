@@ -1,0 +1,33 @@
+// File: load_balancer.go
+
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+	"sync/atomic"
+)
+
+var servers = []string{
+	"http://localhost:8081",
+	"http://localhost:8082",
+}
+
+var currentServer uint32
+
+func getNextServer() string {
+	idx := atomic.AddUint32(&currentServer, 1)
+	return servers[idx%uint32(len(servers))]
+}
+
+func proxyHandler(w http.ResponseWriter, r *http.Request) {
+	server := getNextServer()
+	http.Redirect(w, r, server, http.StatusTemporaryRedirect)
+}
+
+func main() {
+	http.HandleFunc("/", proxyHandler)
+	log.Println("Load Balancer running on :8080...")
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
