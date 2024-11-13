@@ -1,0 +1,30 @@
+// File: markdown_renderer.go
+
+package main
+
+import (
+	"fmt"
+	"log"
+	"os"
+
+	"github.com/russross/blackfriday/v2"
+)
+
+func main() {
+	inputFile := "example.md"
+	outputFile := "example.html"
+
+	data, err := os.ReadFile(inputFile)
+	if err != nil {
+		log.Fatalf("Failed to read file: %v", err)
+	}
+
+	htmlData := blackfriday.Run(data)
+
+	err = os.WriteFile(outputFile, htmlData, 0644)
+	if err != nil {
+		log.Fatalf("Failed to write file: %v", err)
+	}
+
+	fmt.Printf("Markdown rendered to %s\n", outputFile)
+}
